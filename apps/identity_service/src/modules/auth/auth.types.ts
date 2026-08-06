@@ -4,3 +4,13 @@ export type registerUserType={
   password:string,
   conformPassword:string
 }
+
+export type loginUserType={
+  email:string,
+  password:string,
+}
+
+export type verifyRegisterOtpType={
+  userId:string,
+  otp:string,
+}

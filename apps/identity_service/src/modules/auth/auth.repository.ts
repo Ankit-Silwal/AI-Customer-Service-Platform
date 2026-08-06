@@ -16,3 +16,22 @@ export async function createUser(data: {
     data,
   });
 }
+
+export async function findUserById(id: string) {
+  return prisma.user.findUnique({
+    where: {
+      id,
+    },
+  });
+}
+
+export async function verifyUserEmail(id: string) {
+  return prisma.user.update({
+    where: {
+      id,
+    },
+    data: {
+      isEmailVerified: true,
+    },
+  });
+}

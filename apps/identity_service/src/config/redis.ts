@@ -21,4 +21,8 @@ export async function connect_redis(){
   }
 }
 
+export function isRedisConnected() {
+  return REDIS_CLIENT.isOpen;
+}
+
 export default REDIS_CLIENT;
