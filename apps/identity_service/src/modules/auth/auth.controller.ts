@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { loginUser, registerUser, verifyRegisterOtp } from "./auth.service.js";
-import { createSession } from "../session/session.manager.js";
-import { removeSpecificSession } from "../session/session.manager.js";
+import { findUserById } from "./auth.repository.js";
+import { createSession, removeSpecificSession } from "../session/session.manager.js";
 
 async function handleAsync(
 	handler: (req: Request, res: Response) => Promise<void>,
@@ -69,5 +69,26 @@ export function logoutUserController(req: Request, res: Response, next: NextFunc
 		const result = await removeSpecificSession(request.auth.user.id, request.auth.session.sessionId);
 		response.clearCookie("sessionId");
 		response.status(result.success ? 200 : 404).json(result);
+	}, req, res, next);
+}
+
+export function internalUserExistsController(req: Request, res: Response, next: NextFunction) {
+	return handleAsync(async (request, response) => {
+		const userIdParam = request.params.userId;
+		const userId = Array.isArray(userIdParam) ? userIdParam[0] : userIdParam;
+
+		if (!userId) {
+			response.status(400).json({ exists: false, message: "userId is required" });
+			return;
+		}
+
+		const user = await findUserById(userId);
+
+		if (!user) {
+			response.status(404).json({ exists: false });
+			return;
+		}
+
+		response.status(200).json({ exists: true });
 	}, req, res, next);
 }

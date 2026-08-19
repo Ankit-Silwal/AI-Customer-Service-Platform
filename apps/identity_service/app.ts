@@ -2,8 +2,11 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import rootRouter from "./routes.js";
+import { internalUserExistsController } from "./src/modules/auth/auth.controller.js";
 
 const app = express();
+
+app.disable("x-powered-by");
 
 app.use(
 	cors({
@@ -14,6 +17,8 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+app.get("/internal/users/:userId", internalUserExistsController);
 
 app.use("/api", rootRouter);
 
