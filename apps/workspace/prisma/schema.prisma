@@ -19,6 +19,13 @@ enum WorkspaceRole {
   VIEWER
 }
 
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  REVOKED
+}
+
 model Workspace{
   id String @id @default(uuid())
   name String 
@@ -26,6 +33,8 @@ model Workspace{
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   members WorkspaceMember[]
+  invitations WorkspaceInvitation[]
+  auditLogs WorkspaceAuditLog[]
 }
 
 model WorkspaceMember{
@@ -37,4 +46,31 @@ model WorkspaceMember{
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   @@unique([workspaceId, userId])
   @@index([userId])
+}
+
+model WorkspaceInvitation {
+  id String @id @default(uuid())
+  workspaceId String
+  invitedUserId String
+  invitedBy String
+  role WorkspaceRole @default(AGENT)
+  status InvitationStatus @default(PENDING)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  @@index([invitedUserId, status])
+  @@index([workspaceId, status])
+}
+
+model WorkspaceAuditLog {
+  id String @id @default(uuid())
+  workspaceId String
+  actorUserId String
+  action String
+  targetUserId String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  @@index([workspaceId, createdAt])
 }
