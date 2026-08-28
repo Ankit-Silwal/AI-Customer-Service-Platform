@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum KnowledgeSourceType {
+  PDF
+  DOCX
+  WEBSITE
+  FAQ
+}
+
+enum DocumentStatus {
+  UPLOADED
+  PROCESSING
+  READY
+  FAILED
+}
+
+model KnowledgeSource {
+  id          String              @id @default(uuid())
+  workspaceId String
+  name        String
+  type        KnowledgeSourceType
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  documents   Document[]
+}
+
+model Document {
+  id          String         @id @default(uuid())
+  sourceId    String
+  filename    String
+  storageKey  String
+  status      DocumentStatus @default(UPLOADED)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  source      KnowledgeSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([sourceId])
+}
