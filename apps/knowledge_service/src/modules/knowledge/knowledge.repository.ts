@@ -6,7 +6,7 @@ export async function createKnowledgeSource(data:{
   name:string;
   type:KnowledgeSourceType
 }){
-  return prisma.KnowledgeSource.create({
+  return prisma.knowledgeSource.create({
     data
   })
 }
