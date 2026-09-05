@@ -10,3 +10,17 @@ export async function createKnowledgeSource(data:{
     data
   })
 }
+
+export async function createDocument(data:{
+  sourceId:string,
+  filename:string,
+  storageKey:string
+}){
+  return prisma.document.create({
+    data:{
+      sourceId:data.sourceId,
+      filename:data.filename,
+      storageKey:data.storageKey
+    }
+  })
+}
