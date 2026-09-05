@@ -2,6 +2,7 @@ import { createKnowledgeSource } from "./knowledge.repository.js";
 import type { CreateKnowledgeSourceInput } from "./knowledge.types.js";
 import { createDocument } from "./knowledge.repository.js";
 import { uploadFile } from "../storage/storage.service.js";
+import { documentQueue } from "../../config/queue.js";
 export async function createKnowledgeSourceService(data:CreateKnowledgeSourceInput) {
   if(!data.workspaceId){
     throw new Error("Please pass on the workspace Id");
@@ -23,9 +24,13 @@ export async function uploadDocument(
 ) {
   const storageKey = await uploadFile(file);
 
-  return createDocument({
+  const document=await createDocument({
     sourceId,
     filename: file.originalname,
     storageKey,
   });
+  await documentQueue.add("process-document",{
+    documentId:document.id,
+  })
+  return document;
 }
