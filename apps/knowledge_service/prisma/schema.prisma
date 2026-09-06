@@ -5,6 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum KnowledgeSourceType {
@@ -41,7 +42,21 @@ model Document {
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
-  source      KnowledgeSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  source      KnowledgeSource   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  chunks      DocumentChunk[]
 
   @@index([sourceId])
+}
+
+model DocumentChunk {
+  id          String   @id @default(uuid())
+  documentId  String
+  content     String
+  embedding   Unsupported("vector(1536)")
+  chunkIndex  Int
+  createdAt   DateTime @default(now())
+
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
 }

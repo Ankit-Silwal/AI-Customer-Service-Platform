@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "worker": "tsx watch src/workers/document.processor.ts",
     "build": "tsc",
     "start": "node dist/server.js"
   },
@@ -19,7 +20,10 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "mammoth": "^1.8.0",
     "multer": "^2.2.0",
+    "openai": "^4.56.0",
+    "pdf-parse": "^1.1.1",
     "pg": "^8.23.0",
     "prisma": "^7.9.1",
     "redis": "^6.2.1",
@@ -28,8 +32,10 @@
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/mammoth": "^1.5.2",
     "@types/multer": "^2.2.0",
     "@types/node": "^26.1.2",
+    "@types/pdf-parse": "^1.1.4",
     "tsx": "^4.23.12",
     "typescript": "^5.9.2"
   }

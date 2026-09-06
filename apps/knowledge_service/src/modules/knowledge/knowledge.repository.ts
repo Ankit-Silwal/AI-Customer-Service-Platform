@@ -24,3 +24,18 @@ export async function createDocument(data:{
     }
   })
 }
+
+export async function listDocumentsBySource(sourceId: string) {
+  return prisma.document.findMany({
+    where: { sourceId },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function getDocumentById(documentId: string) {
+  return prisma.document.findUnique({ where: { id: documentId } });
+}
+
+export async function deleteDocumentById(documentId: string) {
+  return prisma.document.delete({ where: { id: documentId } });
+}

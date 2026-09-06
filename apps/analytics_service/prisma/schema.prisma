@@ -1,0 +1,15 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model MetricEvent {
+  id          String   @id @default(uuid())
+  workspaceId String
+  type        String
+  createdAt   DateTime @default(now())
+  @@index([workspaceId, type, createdAt])
+}
