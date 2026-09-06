@@ -1,4 +1,5 @@
 "use client";
+import RequireAuth from "../../lib/require-auth";
 import { useCallback, useEffect, useState } from "react";
 import { api, type Ticket } from "../../lib/api";
 import { useToast, useWorkspaces } from "../../lib/app-state";
@@ -10,7 +11,7 @@ const statusBadge = (s: string) =>
   s === "RESOLVED" || s === "CLOSED" ? "b-green" : s === "OPEN" ? "b-red" : "b-amber";
 const prioBadge = (p: string) => (p === "URGENT" || p === "HIGH" ? "b-red" : p === "MEDIUM" ? "b-amber" : "b-gray");
 
-export default function TicketsPage() {
+function TicketsPageInner() {
   const { push } = useToast();
   const { workspaces, activeId, reload } = useWorkspaces();
   const [filter, setFilter] = useState("OPEN");
@@ -135,5 +136,13 @@ export default function TicketsPage() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function TicketsPage() {
+  return (
+    <RequireAuth>
+      <TicketsPageInner />
+    </RequireAuth>
   );
 }

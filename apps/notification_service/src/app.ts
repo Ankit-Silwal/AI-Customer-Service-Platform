@@ -29,4 +29,9 @@ app.post("/notifications", async (req, res) => {
     res.status(500).json({ message: e instanceof Error ? e.message : "Notify failed" });
   }
 });
+// JSON errors only: never leak Express HTML error pages through the gateway.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  res.status(400).json({ message: err instanceof Error ? err.message : "Something went wrong" });
+});
 export default app;

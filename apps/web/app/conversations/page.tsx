@@ -1,12 +1,13 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import RequireAuth from "../../lib/require-auth";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api, type ChatMsg, type Conversation } from "../../lib/api";
 import { useToast, useWorkspaces } from "../../lib/app-state";
 
 const bubble = (t: string) =>
   t === "CUSTOMER" ? "b-customer" : t === "AI" ? "b-ai" : t === "AGENT" ? "b-agent" : "b-system";
 
-export default function ConversationsPage() {
+function ConversationsPageInner() {
   const { push } = useToast();
   const { workspaces, activeId, reload } = useWorkspaces();
   const [list, setList] = useState<Conversation[]>([]);
@@ -16,6 +17,7 @@ export default function ConversationsPage() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [asRole, setAsRole] = useState<"CUSTOMER" | "AGENT">("CUSTOMER");
+  const bottomRef = useRef<HTMLDivElement>(null);
   const wsId = activeId || workspaces[0]?.id || "";
 
   const loadList = useCallback(async () => {
@@ -38,6 +40,11 @@ export default function ConversationsPage() {
     return () => window.clearInterval(t);
   }, [convId, loadMsgs]);
 
+  // Auto-scroll to the newest message whenever messages arrive or chat changes.
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [msgs, convId]);
+
   const send = async (withAI: boolean) => {
     if (!convId || !text.trim()) return;
     setSending(true);
@@ -52,6 +59,10 @@ export default function ConversationsPage() {
         );
         const cited = rag.sources.length > 0 ? `${rag.answer}` : rag.answer;
         await api.post(`/api/conversations/${convId}/messages`, { senderType: "AI", content: cited });
+        if (rag.sources.length === 0) {
+          const wsName = workspaces.find((w) => w.id === wsId)?.name ?? "this workspace";
+          push(`No indexed documents in "${wsName}" — upload docs to it and wait for READY, or switch workspace.`);
+        }
         try { await api.post("/api/analytics/events", { workspaceId: wsId, type: withAI ? "ai.answered" : "message.sent" }); } catch { /* non-fatal */ }
       }
       await loadMsgs(convId); await loadList();
@@ -115,6 +126,7 @@ export default function ConversationsPage() {
                   </div>
                 ))}
                 {msgs.length === 0 && <p className="hint">No messages yet — say hello.</p>}
+                <div ref={bottomRef} />
               </div>
               <div className="toolbar" style={{ marginTop: 10 }}>
                 <div className="field" style={{ minWidth: 120, maxWidth: 160 }}><span>Send as</span>
@@ -137,5 +149,13 @@ export default function ConversationsPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function ConversationsPage() {
+  return (
+    <RequireAuth>
+      <ConversationsPageInner />
+    </RequireAuth>
   );
 }

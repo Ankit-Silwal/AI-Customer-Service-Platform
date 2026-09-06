@@ -10,7 +10,22 @@ export class ApiError extends Error {
 
 async function parse<T>(r: Response): Promise<T> {
   const text = await r.text();
-  const data = (text ? JSON.parse(text) : null) as T & { message?: string };
+  const ct = r.headers.get("content-type") ?? "";
+  const looksJson = ct.includes("application/json") || /^\s*[{[]/.test(text);
+  if (!looksJson || !text) {
+    throw new ApiError(
+      r.status,
+      !r.ok
+        ? `Request failed (${r.status}): server returned ${ct || "a non-JSON response"}. Is the API gateway and the target service running, and is the route correct?`
+        : "Empty or non-JSON response from server",
+    );
+  }
+  let data: T & { message?: string };
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new ApiError(r.status, `Request failed (${r.status}): server returned invalid JSON`);
+  }
   if (!r.ok) throw new ApiError(r.status, (data as { message?: string })?.message ?? `Request failed (${r.status})`);
   return data as T;
 }

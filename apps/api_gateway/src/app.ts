@@ -11,8 +11,35 @@ app.use((req, res, next) => {
   express.json()(req, res, next);
 });
 
-// No business logic here: routing + request-id + error shape only.
-// Auth propagation: browser cookies (sessionId) are forwarded as-is.
+// Routes that belong to a logged-in user. The gateway resolves the session
+// cookie to a user id (via identity) and injects `x-user-id` downstream, so
+// services never trust client-supplied user ids. Anonymous calls are rejected
+// here with a clear 401 instead of surfacing confusing downstream errors
+// like "User ID is required".
+const AUTH_REQUIRED_PREFIXES = [
+  "/api/workspaces",
+  "/api/invitations",
+  "/api/knowledge",
+  "/api/rag",
+  "/api/conversations",
+  "/api/tickets",
+  "/api/notifications",
+  "/api/analytics",
+  "/api/internal",
+];
+// Identity's own login/register/verify stay public; everything else under
+// /api/identity also needs a session (identity enforces it too).
+const IDENTITY_PUBLIC_PATHS = new Set([
+  "/api/identity/auth/login",
+  "/api/identity/auth/register",
+  "/api/identity/auth/verify-otp",
+]);
+
+function requiresAuth(path: string): boolean {
+  if (IDENTITY_PUBLIC_PATHS.has(path)) return false;
+  if (path.startsWith("/api/identity/")) return true;
+  return AUTH_REQUIRED_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`) || path.startsWith(`${p}?`));
+}
 const T = (v: string | undefined, fallback: string) => (v && v.trim() ? v.replace(/\/$/, "") : fallback);
 
 function resolveUpstream(path: string, query: string): string | null {
@@ -78,6 +105,13 @@ app.use(async (req, res) => {
     if (process.env.INTERNAL_API_TOKEN) headers["x-internal-token"] = process.env.INTERNAL_API_TOKEN;
     const userId = await resolveUserId(req.headers.cookie);
     if (userId) headers["x-user-id"] = userId;
+    // Service-to-service calls may authenticate with the internal token instead.
+    const hasInternalToken =
+      !!process.env.INTERNAL_API_TOKEN &&
+      req.headers["x-internal-token"] === process.env.INTERNAL_API_TOKEN;
+    if (!userId && !hasInternalToken && requiresAuth(req.path)) {
+      return res.status(401).json({ message: "Please log in again", requestId });
+    }
     const isMultipart = req.headers["content-type"]?.includes("multipart") ?? false;
     let body: unknown;
     if (["GET", "HEAD"].includes(req.method)) {
@@ -99,6 +133,13 @@ app.use(async (req, res) => {
     });
     const text = await r.text();
     res.status(r.status);
+    // Forward upstream cookies (e.g. identity `sessionId` on login/logout).
+    // Without this the browser never stores the session and /me keeps 401ing.
+    try {
+      const getSetCookie = (r.headers as unknown as { getSetCookie?: () => string[] }).getSetCookie;
+      const setCookies = typeof getSetCookie === "function" ? getSetCookie.call(r.headers) : [];
+      for (const c of setCookies ?? []) res.append("set-cookie", c);
+    } catch { /* non-fatal */ }
     const ct = r.headers.get("content-type") ?? "";
     if (ct.includes("application/json")) {
       try { return res.json(text ? JSON.parse(text) : {}); }

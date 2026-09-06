@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useSession } from "../lib/app-state";
 
 const demos = {
   answer: [
@@ -20,6 +21,7 @@ type DemoKey = keyof typeof demos;
 
 export default function Home() {
   const [tab, setTab] = useState<DemoKey>("answer");
+  const { user, loading } = useSession();
   return (
     <main>
       <div className="hero">
@@ -29,10 +31,17 @@ export default function Home() {
           Warmdesk learns from your help docs, answers customers with cited sources, routes the
           hard cases to the right human, and shows you exactly what improved.
         </p>
-        <div className="cta-row">
-          <a className="btn btn-primary" href="/register">Start free</a>
-          <a className="btn btn-ghost" href="/conversations">Try a live chat</a>
-        </div>
+        {!loading && (user ? (
+          <div className="cta-row">
+            <a className="btn btn-primary" href="/workspaces">Open your workspaces</a>
+            <a className="btn btn-ghost" href="/conversations">Try a live chat</a>
+          </div>
+        ) : (
+          <div className="cta-row">
+            <a className="btn btn-primary" href="/register">Start free</a>
+            <a className="btn btn-ghost" href="/login">Log in</a>
+          </div>
+        ))}
         <div className="tabs" role="tablist">
           {(Object.keys(demos) as DemoKey[]).map((k) => (
             <button key={k} role="tab" className={`tab${tab === k ? " active" : ""}`} onClick={() => setTab(k)}>
@@ -59,7 +68,7 @@ export default function Home() {
         <div className="card"><h3>Insight Agent</h3><p className="sub">Resolution vs escalation trends per workspace.</p><a href="/analytics">Open analytics →</a></div>
       </div>
 
-      <h2>From upload to answer</h2>
+      <h2 id="how">From upload to answer</h2>
       <p className="sub">The pipeline running underneath this page.</p>
       <div className="card">
         <ol style={{ margin: 0, paddingLeft: 20, lineHeight: 2 }}>
@@ -88,10 +97,17 @@ export default function Home() {
       <div className="hero" style={{ marginTop: 32, textAlign: "center" }}>
         <h2 style={{ marginTop: 0 }}>Give every customer an instant answer</h2>
         <p className="sub" style={{ margin: "0 auto 8px" }}>Bring one help doc — Warmdesk handles the rest.</p>
-        <div className="cta-row" style={{ justifyContent: "center" }}>
-          <a className="btn btn-primary" href="/register">Start free</a>
-          <a className="btn btn-ghost" href="/login">Log in</a>
-        </div>
+        {!loading && (user ? (
+          <div className="cta-row" style={{ justifyContent: "center" }}>
+            <a className="btn btn-primary" href="/workspaces">Open your workspaces</a>
+            <a className="btn btn-ghost" href="/analytics">See insights</a>
+          </div>
+        ) : (
+          <div className="cta-row" style={{ justifyContent: "center" }}>
+            <a className="btn btn-primary" href="/register">Start free</a>
+            <a className="btn btn-ghost" href="/login">Log in</a>
+          </div>
+        ))}
       </div>
     </main>
   );

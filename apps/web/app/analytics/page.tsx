@@ -1,9 +1,10 @@
 "use client";
+import RequireAuth from "../../lib/require-auth";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { useToast, useWorkspaces } from "../../lib/app-state";
 
-export default function AnalyticsPage() {
+function AnalyticsPageInner() {
   const { push } = useToast();
   const { workspaces, activeId, reload } = useWorkspaces();
   const [data, setData] = useState<{ total: number; counts: Record<string, number> } | null>(null);
@@ -60,5 +61,13 @@ export default function AnalyticsPage() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function AnalyticsPage() {
+  return (
+    <RequireAuth>
+      <AnalyticsPageInner />
+    </RequireAuth>
   );
 }

@@ -54,4 +54,9 @@ app.post("/tickets/:id/resolve", async (req, res) => {
   catch (e) { bad(res, e); }
 });
 // Escalation entry: AI/orchestrator calls POST /tickets with conversationId + HIGH priority.
+// JSON errors only: never leak Express HTML error pages through the gateway.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  res.status(400).json({ message: err instanceof Error ? err.message : "Something went wrong" });
+});
 export default app;

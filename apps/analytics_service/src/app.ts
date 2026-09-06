@@ -29,4 +29,9 @@ app.get("/metrics", async (req, res) => {
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   res.json({ workspaceId: ws, total, counts });
 });
+// JSON errors only: never leak Express HTML error pages through the gateway.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  res.status(400).json({ message: err instanceof Error ? err.message : "Something went wrong" });
+});
 export default app;

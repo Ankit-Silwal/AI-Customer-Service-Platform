@@ -1,4 +1,5 @@
 "use client";
+import RequireAuth from "../../lib/require-auth";
 import { useCallback, useEffect, useState } from "react";
 import { api, type Doc, type Source } from "../../lib/api";
 import { useToast, useWorkspaces } from "../../lib/app-state";
@@ -7,7 +8,7 @@ const types = ["PDF", "DOCX", "WEBSITE", "FAQ"];
 const statusBadge = (s: string) =>
   s === "READY" ? "b-green" : s === "FAILED" ? "b-red" : s === "PROCESSING" ? "b-blue" : "b-amber";
 
-export default function KnowledgePage() {
+function KnowledgePageInner() {
   const { push } = useToast();
   const { workspaces, activeId, reload } = useWorkspaces();
   const [sources, setSources] = useState<Source[]>([]);
@@ -168,5 +169,13 @@ export default function KnowledgePage() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function KnowledgePage() {
+  return (
+    <RequireAuth>
+      <KnowledgePageInner />
+    </RequireAuth>
   );
 }

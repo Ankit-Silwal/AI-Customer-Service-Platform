@@ -69,7 +69,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, []);
   const reload = useCallback(async () => {
     try {
-      const list = await api.get<Workspace[]>("/api/workspaces/workspaces");
+      const list = await api.get<Workspace[]>("/api/workspaces");
       setWorkspaces(list);
       const saved = window.localStorage.getItem("warmdesk.ws") ?? "";
       if (list.length > 0 && !list.some((w) => w.id === (saved || activeId))) {

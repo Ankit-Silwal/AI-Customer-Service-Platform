@@ -1,4 +1,5 @@
 "use client";
+import RequireAuth from "../../lib/require-auth";
 import { useEffect, useState } from "react";
 import { api, type Invitation, type Member, type Workspace } from "../../lib/api";
 import { useToast, useWorkspaces } from "../../lib/app-state";
@@ -6,6 +7,14 @@ import { useToast, useWorkspaces } from "../../lib/app-state";
 const roles = ["OWNER", "ADMIN", "AGENT", "VIEWER"];
 
 export default function WorkspacesPage() {
+  return (
+    <RequireAuth>
+      <WorkspacesPageInner />
+    </RequireAuth>
+  );
+}
+
+function WorkspacesPageInner() {
   const { push } = useToast();
   const { workspaces, activeId, setActiveId, reload } = useWorkspaces();
   const [name, setName] = useState("");
@@ -23,12 +32,12 @@ export default function WorkspacesPage() {
     setActiveId(id);
     try {
       const [w, m] = await Promise.all([
-        api.get<Workspace>(`/api/workspaces/workspaces/${id}`),
-        api.get<Member[]>(`/api/workspaces/workspaces/${id}/members`),
+        api.get<Workspace>(`/api/workspaces/${id}`),
+        api.get<Member[]>(`/api/workspaces/${id}/members`),
       ]);
       setDetail(w); setRename(w.name);
       setMembers(m);
-      try { setInvites(await api.get<Invitation[]>(`/api/workspaces/workspaces/${id}/invitations`)); }
+      try { setInvites(await api.get<Invitation[]>(`/api/workspaces/${id}/invitations`)); }
       catch { setInvites([]); }
     } catch (err) { push(err instanceof Error ? err.message : "Failed to open workspace"); }
   };
@@ -44,7 +53,7 @@ export default function WorkspacesPage() {
         <button className="btn btn-primary" onClick={async () => {
           if (!name.trim()) return push("Name is required");
           try {
-            const w = await api.post<Workspace>("/api/workspaces/workspaces", { name: name.trim() });
+            const w = await api.post<Workspace>("/api/workspaces", { name: name.trim() });
             setName(""); await reload(); await open(w.id); push(`Created “${w.name}”`);
           } catch (err) { push(err instanceof Error ? err.message : "Create failed"); }
         }}>Create</button>
@@ -59,7 +68,7 @@ export default function WorkspacesPage() {
             {workspaces.map((w) => (
               <tr key={w.id}>
                 <td><b>{w.name}</b> {w.id === activeId && <span className="badge b-amber">active</span>}</td>
-                <td><code className="mono">{w.id}</code></td>
+                <td><code className="mono" title={w.id}>{w.id.slice(0, 8)}…</code></td>
                 <td><button className="btn btn-ghost btn-sm" onClick={() => open(w.id)}>Manage</button></td>
               </tr>
             ))}
@@ -76,14 +85,14 @@ export default function WorkspacesPage() {
             </div>
             <button className="btn btn-ghost btn-sm" onClick={async () => {
               try {
-                const w = await api.patch<Workspace>(`/api/workspaces/workspaces/${detail.id}`, { name: rename });
+                const w = await api.patch<Workspace>(`/api/workspaces/${detail.id}`, { name: rename });
                 setDetail(w); await reload(); push("Renamed");
               } catch (err) { push(err instanceof Error ? err.message : "Rename failed"); }
             }}>Save</button>
             <button className="btn btn-danger btn-sm" onClick={async () => {
               if (!window.confirm(`Delete “${detail.name}”?`)) return;
               try {
-                await api.del(`/api/workspaces/workspaces/${detail.id}`);
+                await api.del(`/api/workspaces/${detail.id}`);
                 setDetail(null); await reload(); push("Workspace deleted");
               } catch (err) { push(err instanceof Error ? err.message : "Delete failed"); }
             }}>Delete</button>
@@ -99,7 +108,7 @@ export default function WorkspacesPage() {
                   <td>
                     <select className="input" style={{ width: "auto" }} value={m.role} onChange={async (e) => {
                       try {
-                        await api.patch(`/api/workspaces/workspaces/${detail.id}/members/${m.userId}/role`, { role: e.target.value });
+                        await api.patch(`/api/workspaces/${detail.id}/members/${m.userId}/role`, { role: e.target.value });
                         push("Role updated"); await open(detail.id);
                       } catch (err) { push(err instanceof Error ? err.message : "Role change failed"); }
                     }}>
@@ -109,7 +118,7 @@ export default function WorkspacesPage() {
                   <td>
                     <button className="btn btn-ghost btn-sm" onClick={async () => {
                       try {
-                        await api.del(`/api/workspaces/workspaces/${detail.id}/members/${m.userId}`);
+                        await api.del(`/api/workspaces/${detail.id}/members/${m.userId}`);
                         push("Member removed"); await open(detail.id);
                       } catch (err) { push(err instanceof Error ? err.message : "Remove failed"); }
                     }}>Remove</button>
@@ -131,7 +140,7 @@ export default function WorkspacesPage() {
             </div>
             <button className="btn btn-primary btn-sm" onClick={async () => {
               try {
-                await api.post(`/api/workspaces/workspaces/${detail.id}/invitations`, { userId: inviteUser.trim(), role: inviteRole });
+                await api.post(`/api/workspaces/${detail.id}/invitations`, { userId: inviteUser.trim(), role: inviteRole });
                 setInviteUser(""); push("Invitation sent"); await open(detail.id);
               } catch (err) { push(err instanceof Error ? err.message : "Invite failed"); }
             }}>Invite</button>
@@ -148,15 +157,15 @@ export default function WorkspacesPage() {
                     <td><span className="badge b-blue">{inv.status}</span></td>
                     <td style={{ whiteSpace: "nowrap" }}>
                       <button className="btn btn-ghost btn-sm" onClick={async () => {
-                        try { await api.post(`/api/workspaces/invitations/${inv.id}/accept`, {}); push("Accepted"); await open(detail.id); }
+                        try { await api.post(`/api/invitations/${inv.id}/accept`, {}); push("Accepted"); await open(detail.id); }
                         catch (err) { push(err instanceof Error ? err.message : "Accept failed"); }
                       }}>Accept</button>{" "}
                       <button className="btn btn-ghost btn-sm" onClick={async () => {
-                        try { await api.post(`/api/workspaces/invitations/${inv.id}/decline`, {}); push("Declined"); await open(detail.id); }
+                        try { await api.post(`/api/invitations/${inv.id}/decline`, {}); push("Declined"); await open(detail.id); }
                         catch (err) { push(err instanceof Error ? err.message : "Decline failed"); }
                       }}>Decline</button>{" "}
                       <button className="btn btn-danger btn-sm" onClick={async () => {
-                        try { await api.del(`/api/workspaces/workspaces/${detail.id}/invitations/${inv.id}`); push("Revoked"); await open(detail.id); }
+                        try { await api.del(`/api/workspaces/${detail.id}/invitations/${inv.id}`); push("Revoked"); await open(detail.id); }
                         catch (err) { push(err instanceof Error ? err.message : "Revoke failed"); }
                       }}>Revoke</button>
                     </td>

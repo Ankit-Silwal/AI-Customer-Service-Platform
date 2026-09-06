@@ -187,6 +187,42 @@ details.faq p { color: var(--ink-2); font-size: 14px; }
 .b-system { align-self: center; background: transparent; color: var(--muted); font-size: 12.5px; }
 .src { font-size: 12px; color: var(--blue); }
 
+/* ---------- auth ---------- */
+.auth-wrap { display: flex; justify-content: center; padding: 40px 0 24px; }
+.auth-card {
+  width: 100%; max-width: 560px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 28px; box-shadow: var(--shadow);
+}
+.auth-card h2 { margin-bottom: 4px; }
+.auth-card form { display: flex; flex-direction: column; }
+.auth-card .hint { margin-top: 12px; }
+.btn-block { width: 100%; margin-top: 6px; }
+.login-wall { text-align: left; }
+.avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 50%; flex: none;
+  background: linear-gradient(135deg, #fbbf24, #ea580c);
+  color: #431407; font-size: 12px; font-weight: 900;
+}
+.navuser { display: inline-flex; align-items: center; gap: 7px; margin-left: 8px; }
+.skel-nav { display: inline-block; width: 120px; height: 14px; margin: 0; }
+
+/* ---------- a11y / responsive polish ---------- */
+.btn:focus-visible, .navlink:focus-visible, .tab:focus-visible, .input:focus-visible {
+  outline: 2px solid #fdba74; outline-offset: 2px;
+}
+@media (max-width: 640px) {
+  .hero { padding: 28px 20px; }
+  .auth-card { padding: 20px; }
+  .navbar-inner { padding: 10px 14px; }
+  .page { padding: 24px 14px 56px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .skel { animation: none; }
+}
+
 /* ---------- misc ---------- */
 .toolbar { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; margin-bottom: 14px; }
 .toolbar .field { margin-bottom: 0; min-width: 220px; flex: 1; }
