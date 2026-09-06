@@ -13,12 +13,12 @@ export const getConversationById = async (id: string) => {
   return c;
 };
 
-export const patchConversation = async (id: string, data: { status?: "OPEN" | "WAITING" | "RESOLVED" | "CLOSED"; assignedAgentId?: string | null }) => {
+export const patchConversation = async (id: string, data: { status?: "OPEN" | "WAITING" | "RESOLVED" | "CLOSED" | undefined; assignedAgentId?: string | null | undefined }) => {
   await getConversationById(id);
   return repo.updateConversation(id, data);
 };
 
-export const postMessage = async (conversationId: string, msg: { senderType: "CUSTOMER" | "AI" | "AGENT" | "SYSTEM"; senderId?: string; content: string }) => {
+export const postMessage = async (conversationId: string, msg: { senderType: "CUSTOMER" | "AI" | "AGENT" | "SYSTEM"; senderId?: string | undefined; content: string }) => {
   await getConversationById(conversationId);
   // AI answers are produced by callers (gateway/orchestrator) using rag_service;
   // this service only stores the message history. Escalation creates a ticket (ticket_service).

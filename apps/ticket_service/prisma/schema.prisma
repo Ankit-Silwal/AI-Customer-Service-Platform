@@ -4,10 +4,20 @@ generator client {
 }
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
-enum TicketStatus { OPEN IN_PROGRESS WAITING RESOLVED CLOSED }
-enum TicketPriority { LOW MEDIUM HIGH URGENT }
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING
+  RESOLVED
+  CLOSED
+}
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
 model Ticket {
   id             String         @id @default(uuid())
   workspaceId    String

@@ -1,7 +1,7 @@
 import type { Request,Response } from "express";
-import { createKnowledgeSourceService } from "./knowledge.service.js";
+import { createKnowledgeSourceService, getSource, listSources, removeSource, renameSource } from "./knowledge.service.js";
 import { getDocument, listDocuments, removeDocument, uploadDocument } from "./knowledge.service.js";
-import { documentIdSchema, listDocumentsSchema, uploadDocumentSchema } from "./knowledge.schema.js";
+import { documentIdSchema, listDocumentsSchema, renameSourceSchema, sourceIdParamSchema, uploadDocumentSchema, workspaceQuerySchema } from "./knowledge.schema.js";
 
 export async function uploadDocumentController(
   req: Request,
@@ -47,6 +47,52 @@ export async function createKnowledgeSourceController(req:Request,res:Response) 
     return res.status(400).json({
       message:error instanceof Error?error.message:"Something went wrong"
     })
+  }
+}
+
+export async function listSourcesController(req: Request, res: Response) {
+  const parsed = workspaceQuerySchema.safeParse({ workspaceId: req.query.workspaceId });
+  if (!parsed.success) return res.status(400).json({ message: parsed.error.issues[0]?.message ?? "Invalid workspaceId" });
+  try {
+    return res.json(await listSources(parsed.data.workspaceId));
+  } catch (error) {
+    return res.status(400).json({ message: error instanceof Error ? error.message : "Failed to list sources" });
+  }
+}
+
+export async function getSourceController(req: Request, res: Response) {
+  const parsed = sourceIdParamSchema.safeParse({ sourceId: req.params.sourceId });
+  if (!parsed.success) return res.status(400).json({ message: parsed.error.issues[0]?.message ?? "Invalid sourceId" });
+  try {
+    return res.json(await getSource(parsed.data.sourceId));
+  } catch (error) {
+    const status = error instanceof Error && /not found/i.test(error.message) ? 404 : 400;
+    return res.status(status).json({ message: error instanceof Error ? error.message : "Failed" });
+  }
+}
+
+export async function renameSourceController(req: Request, res: Response) {
+  const param = sourceIdParamSchema.safeParse({ sourceId: req.params.sourceId });
+  if (!param.success) return res.status(400).json({ message: param.error.issues[0]?.message ?? "Invalid sourceId" });
+  const body = renameSourceSchema.safeParse(req.body);
+  if (!body.success) return res.status(400).json({ message: body.error.issues[0]?.message ?? "Invalid name" });
+  try {
+    return res.json(await renameSource(param.data.sourceId, body.data.name));
+  } catch (error) {
+    const status = error instanceof Error && /not found/i.test(error.message) ? 404 : 400;
+    return res.status(status).json({ message: error instanceof Error ? error.message : "Failed" });
+  }
+}
+
+export async function deleteSourceController(req: Request, res: Response) {
+  const parsed = sourceIdParamSchema.safeParse({ sourceId: req.params.sourceId });
+  if (!parsed.success) return res.status(400).json({ message: parsed.error.issues[0]?.message ?? "Invalid sourceId" });
+  try {
+    await removeSource(parsed.data.sourceId);
+    return res.json({ message: "Knowledge source deleted" });
+  } catch (error) {
+    const status = error instanceof Error && /not found/i.test(error.message) ? 404 : 400;
+    return res.status(status).json({ message: error instanceof Error ? error.message : "Failed" });
   }
 }
 
