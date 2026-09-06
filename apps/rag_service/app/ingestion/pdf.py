@@ -45,13 +45,23 @@ def extract_text(data: bytes, filename: str, content_type: str = "") -> str:
     return data.decode("utf-8", errors="ignore")
 
 
-def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> list[str]:
-    """Char splitter with overlap. Keeps parity with TS worker defaults."""
+def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 400) -> list[str]:
+    """Recursive splitter (1000/400). Falls back to char splitter if langchain missing."""
     cleaned = " ".join((text or "").split())
     if not cleaned:
         return []
     if overlap >= chunk_size:
         overlap = chunk_size // 5
+    try:
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=overlap,
+        )
+        return [c for c in splitter.split_text(cleaned) if c.strip()]
+    except Exception:
+        pass
     chunks: list[str] = []
     step = chunk_size - overlap
     for i in range(0, len(cleaned), step):
