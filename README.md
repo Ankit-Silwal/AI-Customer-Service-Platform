@@ -1,29 +1,37 @@
-# AI Customer Service Platform
+# AI Customer Service Platform (Warmdesk)
 
-This monorepo contains three backend services that work together to support identity, workspace collaboration, and knowledge management for an AI customer service platform.
+Monorepo (Turborepo): identity, workspace, knowledge, RAG (Python), conversation,
+ticket, notification, analytics, API gateway, and Next.js web. Full details: [`docs/`](docs/README.md).
 
 ## Services
 
-### Identity Service
+### Identity Service — `:8000`
 - Handles registration, OTP verification, login, logout, and session management.
 - Public routes are mounted under `/api`.
 - Provides a trusted internal user lookup for downstream services.
-- Database: PostgreSQL
+- Database: PostgreSQL (`identity_db`)
 - Session store: Redis
-- Default port: `4000`
 
-### Workspace Service
+### Workspace Service — `:7999`
 - Manages workspaces, members, invitations, roles, permissions, and audit records.
 - Exposes the workspace API under `/api`.
 - Validates user existence through the identity service.
-- Database: PostgreSQL
-- Default port: `7999`
+- Database: PostgreSQL (`workplace`)
 
-### Knowledge Service
+### Knowledge Service — `:7998`
 - Manages knowledge sources and attached documents for AI-enabled workflows.
 - Stores source metadata and document records for a workspace.
-- Database: PostgreSQL
-- Port: configured via `PORT`
+- Uploads files to private Supabase storage, enqueues BullMQ ingestion jobs.
+- Database: PostgreSQL (`knowledge_db`)
+
+### RAG Service (Python) — `:8001`
+- Chunking, OpenAI embeddings, Qdrant vectors, cited answers. See [`docs/04-rag.md`](docs/04-rag.md).
+
+### Conversation (`:3004`) · Ticket (`:3005`) · Notification (`:3006`) · Analytics (`:3007`)
+
+### API Gateway — `:8080` · Web — `:3000`
+
+Start here: [`docs/12-runbook.md`](docs/12-runbook.md) · test everything: [`docs/11-testing.md`](docs/11-testing.md) · env names: [`ENV.md`](ENV.md).
 
 ---
 

@@ -16,9 +16,9 @@ app.use((req, res, next) => {
 const T = (v: string | undefined, fallback: string) => (v && v.trim() ? v.replace(/\/$/, "") : fallback);
 
 function resolveUpstream(path: string, query: string): string | null {
-  const IDENTITY = T(process.env.IDENTITY_URL, "http://localhost:4000");
+  const IDENTITY = T(process.env.IDENTITY_URL, "http://localhost:8000");
   const WORKSPACE = T(process.env.WORKSPACE_URL, "http://localhost:7999");
-  const KNOWLEDGE = T(process.env.KNOWLEDGE_URL, "http://localhost:3003");
+  const KNOWLEDGE = T(process.env.KNOWLEDGE_URL, "http://localhost:7998");
   const RAG = T(process.env.RAG_URL, "http://localhost:8001");
   const CONV = T(process.env.CONVERSATION_URL, "http://localhost:3004");
   const TICKET = T(process.env.TICKET_URL, "http://localhost:3005");
@@ -50,6 +50,23 @@ function resolveUpstream(path: string, query: string): string | null {
 
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
+// Resolve the caller's user id from the Identity session cookie so downstream
+// services (workspace, etc.) don't have to trust client-supplied user ids.
+async function resolveUserId(cookie: string | undefined): Promise<string | null> {
+  if (!cookie) return null;
+  try {
+    const r = await fetch(`${T(process.env.IDENTITY_URL, "http://localhost:8000")}/api/auth/me`, {
+      headers: { cookie, "x-request-id": randomUUID() },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!r.ok) return null;
+    const data = (await r.json()) as { user?: { id?: string } };
+    return data.user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 app.use(async (req, res) => {
   const requestId = randomUUID();
   res.setHeader("x-request-id", requestId);
@@ -59,6 +76,8 @@ app.use(async (req, res) => {
     const headers: Record<string, string> = { "x-request-id": requestId };
     if (req.headers.cookie) headers.cookie = req.headers.cookie;
     if (process.env.INTERNAL_API_TOKEN) headers["x-internal-token"] = process.env.INTERNAL_API_TOKEN;
+    const userId = await resolveUserId(req.headers.cookie);
+    if (userId) headers["x-user-id"] = userId;
     const isMultipart = req.headers["content-type"]?.includes("multipart") ?? false;
     let body: unknown;
     if (["GET", "HEAD"].includes(req.method)) {

@@ -1,27 +1,63 @@
 export const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
-async function req(path: string, init: RequestInit = {}) {
+export class ApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+async function parse<T>(r: Response): Promise<T> {
+  const text = await r.text();
+  const data = (text ? JSON.parse(text) : null) as T & { message?: string };
+  if (!r.ok) throw new ApiError(r.status, (data as { message?: string })?.message ?? `Request failed (${r.status})`);
+  return data as T;
+}
+
+async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
   const r = await fetch(`${API}${path}`, {
     credentials: "include",
     headers: { "content-type": "application/json", ...(init.headers ?? {}) },
     ...init,
   });
-  const text = await r.text();
-  const data = text ? JSON.parse(text) : null;
-  if (!r.ok) throw new Error((data as { message?: string })?.message ?? `Request failed ${r.status}`);
-  return data;
+  return parse<T>(r);
 }
 
 export const api = {
-  get: (p: string) => req(p),
-  post: (p: string, body: unknown) => req(p, { method: "POST", body: JSON.stringify(body) }),
-  patch: (p: string, body: unknown) => req(p, { method: "PATCH", body: JSON.stringify(body) }),
-  del: (p: string) => req(p, { method: "DELETE" }),
-  upload: async (p: string, form: FormData) => {
-    const r = await fetch(`${API}${p}`, { method: "POST", credentials: "include", body: form });
-    const t = await r.text();
-    const d = t ? JSON.parse(t) : null;
-    if (!r.ok) throw new Error((d as { message?: string })?.message ?? "Upload failed");
-    return d;
-  },
+  get: <T,>(p: string) => req<T>(p),
+  post: <T,>(p: string, body: unknown) => req<T>(p, { method: "POST", body: JSON.stringify(body) }),
+  patch: <T,>(p: string, body: unknown) => req<T>(p, { method: "PATCH", body: JSON.stringify(body) }),
+  del: <T,>(p: string) => req<T>(p, { method: "DELETE" }),
+  upload: <T,>(p: string, form: FormData, onProgress?: (pct: number) => void) =>
+    new Promise<T>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${API}${p}`);
+      xhr.withCredentials = true;
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
+      };
+      xhr.onload = () => {
+        try {
+          const data = (xhr.responseText ? JSON.parse(xhr.responseText) : null) as T & { message?: string };
+          if (xhr.status >= 200 && xhr.status < 300) resolve(data as T);
+          else reject(new ApiError(xhr.status, (data as { message?: string })?.message ?? "Upload failed"));
+        } catch (err) {
+          reject(err instanceof Error ? err : new Error("Upload failed"));
+        }
+      };
+      xhr.onerror = () => reject(new Error("Network error during upload"));
+      xhr.send(form);
+    }),
 };
+
+/* ---------- shared types ---------- */
+export interface Workspace { id: string; name: string; slug: string }
+export interface Member { userId: string; role: string }
+export interface Invitation { id: string; workspaceId: string; invitedUserId: string; role: string; status: string; expiresAt: string }
+export interface Source { id: string; workspaceId: string; name: string; type: string }
+export interface Doc { id: string; sourceId: string; filename: string; storageKey: string; status: string; createdAt: string }
+export interface Conversation { id: string; workspaceId: string; customerId: string; status: string; assignedAgentId: string | null }
+export interface ChatMsg { id: string; senderType: string; senderId: string | null; content: string; createdAt: string }
+export interface Ticket { id: string; workspaceId: string; conversationId: string | null; title: string; status: string; priority: string; assigneeId: string | null }
+export interface SessionUser { id: string; name: string; email: string; isEmailVerified: boolean }

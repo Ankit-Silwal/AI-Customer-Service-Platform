@@ -18,11 +18,10 @@ Postgres container creates via `docker/init-db.sql`:
 
 ```
 DATABASE_URL=postgresql://postgres:postgres@localhost:5555/identity_db
-REDIS_URL=redis://localhost:6666
-PORT=4000
-SESSION_SECRET=<random-32-chars>
-SMTP_HOST= / SMTP_PORT= / SMTP_USER= / SMTP_PASS= / SMTP_FROM=
-FRONTEND_URL=http://localhost:3000
+REDIS_CLIENT_URL=redis://localhost:6666
+SMTP_USER= (gmail address)
+SMTP_PASS= (gmail app password)
+PORT=8000
 ```
 
 ## workspace_service (`apps/workspace_service/.env`)
@@ -41,12 +40,11 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5555/knowledge_db
 REDIS_URL=redis://localhost:6666
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
-SUPABASE_BUCKET=knowledge-docs
-OPENAI_API_KEY=   # only if Node needs it; canonical usage is rag_service
+SUPABASE_BUCKET=knowledge_service
 RAG_SERVICE_URL=http://localhost:8001
 WORKSPACE_SERVICE_URL=http://localhost:7999
-INTERNAL_API_TOKEN=<same-as-workspace>
-PORT=3003
+INTERNAL_API_TOKEN=<shared-random-string>
+PORT=7998
 ```
 
 ## rag_service (`apps/rag_service/.env`)
@@ -54,8 +52,8 @@ PORT=3003
 ```
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
-SUPABASE_BUCKET=knowledge-docs
-OPENAI_API_KEY=
+SUPABASE_BUCKET=knowledge_service
+OPENAI_API_KEY=   # fresh key required (never reuse an exposed one)
 QDRANT_URL=http://localhost:6333
 QDRANT_COLLECTION=knowledge_chunks
 DATABASE_URL=postgresql://postgres:postgres@localhost:5555/knowledge_db  # optional, only flips Document.status; leave empty to keep Python stateless
@@ -105,9 +103,9 @@ PORT=3007
 
 ```
 PORT=8080
-IDENTITY_URL=http://localhost:4000
+IDENTITY_URL=http://localhost:8000
 WORKSPACE_URL=http://localhost:7999
-KNOWLEDGE_URL=http://localhost:3003
+KNOWLEDGE_URL=http://localhost:7998
 RAG_URL=http://localhost:8001
 CONVERSATION_URL=http://localhost:3004
 TICKET_URL=http://localhost:3005
