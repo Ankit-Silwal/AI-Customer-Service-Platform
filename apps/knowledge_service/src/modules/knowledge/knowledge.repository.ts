@@ -24,3 +24,9 @@ export async function createDocument(data:{
     }
   })
 }
+
+export async function findDocumentById(id:string){
+  return prisma.document.findUnique({
+    where:{ id }
+  })
+}

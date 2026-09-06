@@ -1,6 +1,5 @@
-import { createKnowledgeSource } from "./knowledge.repository.js";
+import { createKnowledgeSource, createDocument, findDocumentById } from "./knowledge.repository.js";
 import type { CreateKnowledgeSourceInput } from "./knowledge.types.js";
-import { createDocument } from "./knowledge.repository.js";
 import { uploadFile } from "../storage/storage.service.js";
 import { documentQueue } from "../../config/queue.js";
 export async function createKnowledgeSourceService(data:CreateKnowledgeSourceInput) {
@@ -33,4 +32,8 @@ export async function uploadDocument(
     documentId:document.id,
   })
   return document;
+}
+
+export async function getDocumentById(id:string) {
+  return findDocumentById(id);
 }

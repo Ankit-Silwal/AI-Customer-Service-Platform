@@ -1,12 +1,11 @@
-from sentence_transformers import SentenceTransformer
+from langchain_huggingface import HuggingFaceEmbeddings
 
-from app.config.setting import embedding_model
-
-model=SentenceTransformer(embedding_model)
-
-def create_embedding(text:str)->list[float]:
-  embedding=model.encode(
-    text,
-    normalize_embeddings=True
-  )
-  return embedding.tolist()
+embeddings=HuggingFaceEmbeddings(
+  model_name="BAAI/bge-small-en-v1.5",
+  model_kwargs={
+    "device":"cpu",
+  },
+  encode_kwargs={
+    "normalize_embedding":True
+  }
+)
